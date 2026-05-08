@@ -17,7 +17,7 @@ app.post("/chat", async (req, res) => {
             {
                 method: "POST",
                 headers: {
-                    "Authorization": "Bearer YOUR_API_KEY",
+                    "Authorization": "Bearer AIzaSyC2olpnL_MhL8Lym3LR1oSLFZzAmM3fKT4",
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
