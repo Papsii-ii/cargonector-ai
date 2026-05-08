@@ -1,5 +1,5 @@
-const express = require("express");
-const cors = require("cors");
+import express from "express";
+import cors from "cors";
 
 const app = express();
 
@@ -32,16 +32,9 @@ You help users with:
 - freight shipping
 - cargo tracking
 - logistics
-- inquiries
-- account support
+- account concerns
 
-CargoNector services:
-- Air Freight
-- Sea Freight
-- Land Freight
-- Domestic & International Shipping
-
-Keep responses short, professional, and helpful.
+Keep responses professional, short, and helpful.
 `
                         },
                         {
@@ -71,6 +64,12 @@ Keep responses short, professional, and helpful.
     }
 });
 
-app.listen(3000, () => {
-    console.log("Server running on port 3000");
+app.get("/", (req, res) => {
+    res.send("CargoNector AI is running.");
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+    console.log("Server running on port " + PORT);
 });
