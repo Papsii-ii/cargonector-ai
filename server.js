@@ -28,13 +28,9 @@ function findTrackingNumber(message) {
 }
 
 async function getShipment(reference) {
-    if (!SITE_URL || !API_TOKEN) return null;
+    if (!SITE_URL) return null;
 
-    const response = await fetch(`${SITE_URL}/tracking_api.php?reference=${reference}`, {
-        headers: {
-            "X-API-TOKEN": API_TOKEN
-        }
-    });
+    const response = await fetch(`${SITE_URL}/tracking_api.php?reference=${reference}`);
 
     return await response.json();
 }
