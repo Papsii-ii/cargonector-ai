@@ -7,13 +7,40 @@ app.use(cors());
 app.use(express.json());
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const SITE_URL = process.env.CARGONECTOR_SITE_URL;
+const API_TOKEN = process.env.CARGONECTOR_API_TOKEN;
 
 if (!OPENROUTER_API_KEY) {
     console.error("Missing OPENROUTER_API_KEY environment variable.");
 }
 
+if (!SITE_URL) {
+    console.error("Missing CARGONECTOR_SITE_URL environment variable.");
+}
+
+if (!API_TOKEN) {
+    console.error("Missing CARGONECTOR_API_TOKEN environment variable.");
+}
+
+function findTrackingNumber(message) {
+    const match = message.match(/CNX-\d{4}-\d{4}/i);
+    return match ? match[0].toUpperCase() : null;
+}
+
+async function getShipment(reference) {
+    if (!SITE_URL || !API_TOKEN) return null;
+
+    const response = await fetch(`${SITE_URL}/tracking_api.php?reference=${reference}`, {
+        headers: {
+            "X-API-TOKEN": API_TOKEN
+        }
+    });
+
+    return await response.json();
+}
+
 app.get("/", (req, res) => {
-    res.send("Cargonector AI is running.");
+    res.send("CargoNector AI is running.");
 });
 
 app.post("/chat", async (req, res) => {
@@ -23,6 +50,36 @@ app.post("/chat", async (req, res) => {
         return res.json({
             reply: "Please type a message."
         });
+    }
+
+    const trackingNumber = findTrackingNumber(message);
+
+    if (trackingNumber) {
+        try {
+            const shipment = await getShipment(trackingNumber);
+
+            if (!shipment || shipment.error) {
+                return res.json({
+                    reply: "I couldn't access the tracking system right now."
+                });
+            }
+
+            if (!shipment.found) {
+                return res.json({
+                    reply: `I couldn't find shipment ${trackingNumber}. Please check the tracking number and try again.`
+                });
+            }
+
+            return res.json({
+                reply: `Shipment ${shipment.reference} is currently ${shipment.status}. Route: ${shipment.origin} to ${shipment.destination}. Service: ${shipment.shipment_type}. Estimated arrival: ${shipment.eta}.`
+            });
+        } catch (err) {
+            console.error("Tracking API error:", err);
+
+            return res.json({
+                reply: "I couldn't access the tracking system right now."
+            });
+        }
     }
 
     if (!OPENROUTER_API_KEY) {
@@ -37,15 +94,15 @@ app.post("/chat", async (req, res) => {
             headers: {
                 "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
                 "Content-Type": "application/json",
-                "HTTP-Referer": "https://cargonectorclientportal.rf.gd",
-                "X-Title": "Cargonector AI"
+                "HTTP-Referer": SITE_URL || "https://cargonectorclientportal.rf.gd",
+                "X-Title": "CargoNector AI"
             },
             body: JSON.stringify({
-               model: "openrouter/free",
+                model: "google/gemini-2.0-flash-exp:free",
                 messages: [
                     {
-  role: "system",
-  content: `
+                        role: "system",
+                        content: `
 You are CargoNector AI Support Assistant.
 
 Company Overview:
@@ -77,7 +134,7 @@ Tracking Rules:
 - Users track shipments through the Tracking page.
 - Tracking/reference numbers look like CNX-2026-1234.
 - Possible statuses include Pending, Approved, In Progress, and Completed.
-- If the user asks about a specific tracking number, tell them to enter it on the Tracking page unless live database tracking is connected.
+- If the user gives a tracking/reference number, the system will try to check the real database status.
 - Do not invent shipment status.
 
 Portal Pages:
@@ -93,7 +150,7 @@ Tone Rules:
 - Answer like a company support assistant.
 - If a question is unrelated to CargoNector, politely redirect the user to logistics, freight, inquiry, tracking, or account support.
 `
-},
+                    },
                     {
                         role: "user",
                         content: message
