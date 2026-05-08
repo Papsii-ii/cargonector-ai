@@ -25,7 +25,7 @@ app.post("/chat", async (req, res) => {
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
-                "Authorization": "Bearer " + OPENROUTER_API_KEY,
+                "Authorization": "Bearer " + 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,
                 "Content-Type": "application/json",
                 "HTTP-Referer": "https://cargonectorclientportal.rf.gd",
                 "X-Title": "CargoNector AI"
