@@ -31,8 +31,12 @@ async function getShipment(reference) {
     if (!SITE_URL) return null;
 
     const response = await fetch(`${SITE_URL}/tracking_api.php?reference=${reference}`);
+    const text = await response.text();
 
-    return await response.json();
+    console.log("Tracking API status:", response.status);
+    console.log("Tracking API response:", text);
+
+    return JSON.parse(text);
 }
 
 app.get("/", (req, res) => {
