@@ -41,7 +41,7 @@ app.post("/chat", async (req, res) => {
                 "X-Title": "Cargonector AI"
             },
             body: JSON.stringify({
-               model: "google/gemma-2-9b-it:free",
+               model: "openrouter/free",
                 messages: [
                     {
                         role: "system",
