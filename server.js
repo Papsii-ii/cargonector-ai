@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const GEMINI_API_KEY = "AIzaSyC2olpnL_MhL8Lym3LR1oSLFZzAmM3fKT4";
+const OPENROUTER_API_KEY = "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";
 
 app.get("/", (req, res) => {
     res.send("CargoNector AI is running.");
@@ -16,23 +16,26 @@ app.post("/chat", async (req, res) => {
     const message = req.body.message || "";
 
     if (!message.trim()) {
-        return res.json({ reply: "Please type a message." });
+        return res.json({
+            reply: "Please type a message."
+        });
     }
 
     try {
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            parts: [
-                                {
-                                    text: `
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + OPENROUTER_API_KEY,
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://cargonectorclientportal.rf.gd",
+                "X-Title": "CargoNector AI"
+            },
+            body: JSON.stringify({
+                model: "meta-llama/llama-3.1-8b-instruct:free",
+                messages: [
+                    {
+                        role: "system",
+                        content: `
 You are CargoNector AI Support Assistant.
 
 About CargoNector:
@@ -40,48 +43,58 @@ About CargoNector:
 - Services include Air Freight, Sea Freight, and Land Freight.
 - Users can submit shipment inquiries through the Inquiries page.
 - Users can track shipments through the Tracking page.
+- Users can view transaction history through the History page.
 - Regular clients can submit up to 2 inquiries per day.
 - Admins manually review quotations and update shipment statuses.
 - Tracking references look like CNX-2026-1234.
+- Quotations are manually reviewed by the company after submission.
+
+Portal pages:
+- Dashboard: shows shipment and inquiry summaries.
+- Profile: lets users update account details.
+- Inquiries: lets users submit freight inquiries.
+- Tracking: lets users track shipment status.
+- History: shows previous transactions.
+- Admin Panel: lets admins manage inquiries and shipment statuses.
 
 Rules:
 - Keep answers short, professional, and helpful.
-- Do not invent tracking statuses or prices.
-- If users ask for prices, explain that quotations are manually reviewed after submission.
-- Do not ask for passwords or sensitive information.
-- If the question is unrelated, politely redirect to CargoNector services.
-
-User message:
-${message}
+- Answer like a customer support assistant.
+- Do not invent shipment prices.
+- Do not invent tracking statuses.
+- Do not ask for passwords or sensitive account information.
+- If the user asks for exact quotation pricing, tell them to submit an inquiry and wait for manual review.
+- If the question is unrelated to CargoNector, politely redirect them to logistics, freight, tracking, or account support.
 `
-                                }
-                            ]
-                        }
-                    ]
-                })
-            }
-        );
+                    },
+                    {
+                        role: "user",
+                        content: message
+                    }
+                ]
+            })
+        });
 
         const data = await response.json();
 
-        console.log("Gemini response:", JSON.stringify(data, null, 2));
+        console.log("OpenRouter response:", JSON.stringify(data, null, 2));
 
         if (!response.ok) {
             return res.json({
-                reply: "Gemini API error: " + (data.error?.message || response.status)
+                reply: "AI assistant error: " + (data.error?.message || response.status)
             });
         }
 
-        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const reply = data?.choices?.[0]?.message?.content;
 
-        res.json({
-            reply: reply || "AI response was empty."
+        return res.json({
+            reply: reply || "Sorry, I couldn't process that."
         });
 
     } catch (err) {
         console.error("Server error:", err);
 
-        res.json({
+        return res.json({
             reply: "AI assistant is currently unavailable."
         });
     }
