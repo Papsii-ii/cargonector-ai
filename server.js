@@ -6,7 +6,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const OPENROUTER_API_KEY = "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";
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+
+if (!OPENROUTER_API_KEY) {
+    console.error("Missing OPENROUTER_API_KEY environment variable.");
+}
 
 app.get("/", (req, res) => {
     res.send("CargoNector AI is running.");
@@ -21,11 +25,17 @@ app.post("/chat", async (req, res) => {
         });
     }
 
+    if (!OPENROUTER_API_KEY) {
+        return res.json({
+            reply: "AI assistant is not configured yet."
+        });
+    }
+
     try {
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
-                "Authorization": "Bearer " + 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,
+                "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
                 "Content-Type": "application/json",
                 "HTTP-Referer": "https://cargonectorclientportal.rf.gd",
                 "X-Title": "CargoNector AI"
