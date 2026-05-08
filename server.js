@@ -13,7 +13,7 @@ if (!OPENROUTER_API_KEY) {
 }
 
 app.get("/", (req, res) => {
-    res.send("CargoNector AI is running.");
+    res.send("Cargonector AI is running.");
 });
 
 app.post("/chat", async (req, res) => {
@@ -38,7 +38,7 @@ app.post("/chat", async (req, res) => {
                 "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
                 "Content-Type": "application/json",
                 "HTTP-Referer": "https://cargonectorclientportal.rf.gd",
-                "X-Title": "CargoNector AI"
+                "X-Title": "Cargonector AI"
             },
             body: JSON.stringify({
                 model: "meta-llama/llama-3.1-8b-instruct:free",
@@ -46,10 +46,10 @@ app.post("/chat", async (req, res) => {
                     {
                         role: "system",
                         content: `
-You are CargoNector AI Support Assistant.
+You are Cargonector AI Support Assistant.
 
-About CargoNector:
-- CargoNector is a logistics and freight client portal.
+About Cargonector:
+- Cargonector is a logistics and freight client portal.
 - Services include Air Freight, Sea Freight, and Land Freight.
 - Users can submit shipment inquiries through the Inquiries page.
 - Users can track shipments through the Tracking page.
