@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 
-
 const app = express();
 
 app.use(cors());
@@ -9,7 +8,6 @@ app.use(express.json());
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const SITE_URL = process.env.CARGONECTOR_SITE_URL;
-const API_TOKEN = process.env.CARGONECTOR_API_TOKEN;
 
 if (!OPENROUTER_API_KEY) {
     console.error("Missing OPENROUTER_API_KEY environment variable.");
@@ -17,10 +15,6 @@ if (!OPENROUTER_API_KEY) {
 
 if (!SITE_URL) {
     console.error("Missing CARGONECTOR_SITE_URL environment variable.");
-}
-
-if (!API_TOKEN) {
-    console.error("Missing CARGONECTOR_API_TOKEN environment variable.");
 }
 
 function findTrackingNumber(message) {
@@ -115,10 +109,6 @@ Office Hours:
 - Monday to Friday, 8:00 AM to 6:00 PM.
 - Support requests outside office hours may be reviewed on the next business day.
 
-Contact Information:
-- For official concerns, users may contact CargoNector through the company email or phone number listed in the portal.
-- Never ask users for passwords or sensitive account information.
-
 Service Coverage:
 - Domestic areas include Manila, Quezon City, Makati, Pasay, Caloocan, Cebu City, Davao City, Iloilo City, Bacolod, Cagayan de Oro, General Santos, Zamboanga City, Clark, Subic, Batangas Port, Manila North Port, NAIA, and Cebu Port.
 - International destinations may include Tokyo, Singapore, Hong Kong, Busan, Dubai, and Sydney.
@@ -131,23 +121,23 @@ Inquiry Process:
 - Do not invent quotation prices.
 
 Tracking Rules:
-- Users track shipments through the Tracking page.
 - Tracking/reference numbers look like CNX-2026-1234.
-- Possible statuses include Pending, Approved, In Progress, and Completed.
-- If the user gives a tracking/reference number, the system will try to check the real database status.
-- Do not invent shipment status.
+- Possible statuses include Pending, Approved, In Progress, Delayed, Cancelled, and Completed.
+- Do not invent shipment statuses.
+- If the user gives a tracking/reference number, the system checks the database separately.
 
 Portal Pages:
 - Dashboard: shows shipment and inquiry summary.
 - Profile: lets users update account details.
 - Inquiries: lets users submit shipment inquiries.
-- Tracking: lets regular clients track shipment status.
+- Tracking: lets users track shipment status.
 - History: shows previous shipment records.
 - Admin Panel: lets admins manage inquiries and update statuses.
 
 Tone Rules:
 - Keep responses short, clear, professional, and friendly.
 - Answer like a company support assistant.
+- Do not ask users for passwords or sensitive account information.
 - If a question is unrelated to CargoNector, politely redirect the user to logistics, freight, inquiry, tracking, or account support.
 `
                     },
