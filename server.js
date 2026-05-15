@@ -25,13 +25,22 @@ function findTrackingNumber(message) {
 async function getShipment(reference) {
     if (!SITE_URL) return null;
 
-    const response = await fetch(`${SITE_URL}/tracking_api.php?reference=${reference}`);
-    const text = await response.text();
+    try {
+        const response = await fetch(
+            `${SITE_URL}/tracking_api.php?reference=${encodeURIComponent(reference)}`
+        );
 
-    console.log("Tracking API status:", response.status);
-    console.log("Tracking API response:", text);
+        const text = await response.text();
 
-    return JSON.parse(text);
+        console.log("Tracking API status:", response.status);
+        console.log("Tracking API response:", text);
+
+        return JSON.parse(text);
+
+    } catch (err) {
+        console.error("Tracking fetch error:", err);
+        return null;
+    }
 }
 
 app.get("/", (req, res) => {
@@ -39,6 +48,7 @@ app.get("/", (req, res) => {
 });
 
 app.post("/chat", async (req, res) => {
+
     const message = req.body.message || "";
 
     if (!message.trim()) {
@@ -47,13 +57,16 @@ app.post("/chat", async (req, res) => {
         });
     }
 
+    // ===== TRACKING DATABASE CHECK =====
     const trackingNumber = findTrackingNumber(message);
 
     if (trackingNumber) {
+
         try {
+
             const shipment = await getShipment(trackingNumber);
 
-            if (!shipment || shipment.error) {
+            if (!shipment) {
                 return res.json({
                     reply: "I couldn't access the tracking system right now."
                 });
@@ -66,9 +79,15 @@ app.post("/chat", async (req, res) => {
             }
 
             return res.json({
-                reply: `Shipment ${shipment.reference} is currently ${shipment.status}. Route: ${shipment.origin} to ${shipment.destination}. Service: ${shipment.shipment_type}. Estimated arrival: ${shipment.eta}.`
+                reply:
+                    `Shipment ${shipment.reference} is currently ${shipment.status}. ` +
+                    `Route: ${shipment.origin} to ${shipment.destination}. ` +
+                    `Service: ${shipment.shipment_type}. ` +
+                    `Estimated arrival: ${shipment.eta}.`
             });
+
         } catch (err) {
+
             console.error("Tracking API error:", err);
 
             return res.json({
@@ -77,6 +96,7 @@ app.post("/chat", async (req, res) => {
         }
     }
 
+    // ===== OPENROUTER AI =====
     if (!OPENROUTER_API_KEY) {
         return res.json({
             reply: "AI assistant is not configured yet."
@@ -84,19 +104,8 @@ app.post("/chat", async (req, res) => {
     }
 
     try {
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-                "Content-Type": "application/json",
-                "HTTP-Referer": SITE_URL || "https://cargonectorclientportal.rf.gd",
-                "X-Title": "CargoNector AI"
-            },
-            body: JSON.stringify({
-                messages: [
-                    {
-                        role: "system",
-                        content: `
+
+        const systemPrompt = `
 You are CargoNector AI Support Assistant.
 
 Company Overview:
@@ -116,8 +125,7 @@ Service Coverage:
 Inquiry Process:
 - Users submit freight inquiries through the Inquiries page.
 - Required details include shipment type, cargo type, origin, destination, weight, delivery time, and notes.
-- Regular clients can submit up to 2 inquiries per day.
-- After submission, the company manually reviews the inquiry and quotation.
+- After submission, admins manually review the inquiry and quotation.
 - Do not invent quotation prices.
 
 Tracking Rules:
@@ -136,36 +144,68 @@ Portal Pages:
 
 Tone Rules:
 - Keep responses short, clear, professional, and friendly.
-- Answer like a company support assistant.
-- Do not ask users for passwords or sensitive account information.
-- If a question is unrelated to CargoNector, politely redirect the user to logistics, freight, inquiry, tracking, or account support.
-`
-                    },
-                    {
-                        role: "user",
-                        content: message
-                    }
-                ]
-            })
-        });
+- Answer like a logistics company support assistant.
+- Never ask users for passwords or sensitive information.
+- Redirect unrelated questions back to CargoNector services.
+`;
+
+        const response = await fetch(
+            "https://openrouter.ai/api/v1/chat/completions",
+            {
+                method: "POST",
+
+                headers: {
+                    "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+                    "Content-Type": "application/json",
+                    "HTTP-Referer":
+                        SITE_URL || "https://cargonectorclientportal.rf.gd",
+                    "X-Title": "CargoNector AI"
+                },
+
+                body: JSON.stringify({
+
+                    model: "openai/gpt-3.5-turbo",
+
+                    messages: [
+                        {
+                            role: "system",
+                            content: systemPrompt
+                        },
+                        {
+                            role: "user",
+                            content: message
+                        }
+                    ]
+                })
+            }
+        );
 
         const data = await response.json();
 
-        console.log("OpenRouter response:", JSON.stringify(data, null, 2));
+        console.log(
+            "OpenRouter response:",
+            JSON.stringify(data, null, 2)
+        );
 
         if (!response.ok) {
+
             return res.json({
-                reply: "AI assistant error: " + (data.error?.message || response.status)
+                reply:
+                    "AI assistant error: " +
+                    (data.error?.message || response.status)
             });
         }
 
-        const reply = data?.choices?.[0]?.message?.content;
+        const reply =
+            data?.choices?.[0]?.message?.content;
 
         return res.json({
-            reply: reply || "Sorry, I couldn't process that."
+            reply:
+                reply || "Sorry, I couldn't process that."
         });
 
     } catch (err) {
+
         console.error("Server error:", err);
 
         return res.json({
